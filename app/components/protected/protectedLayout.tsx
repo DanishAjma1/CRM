@@ -14,7 +14,7 @@ export default function ProtectedLayout({
   useEffect(() => {
     if (status === "unauthenticated") {
       signOut({ redirect: false });
-      router.push("/pages/SignIn");
+      router.push("/authentication/client/login");
     }
   }, [status]);
 

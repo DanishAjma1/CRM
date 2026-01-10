@@ -39,7 +39,7 @@ export default function RegisterClient() {
             );
             if (res.status === 201) {
               toast.success("User registered successfully");
-              router.push("/dashboard/ClientDashboard");
+              router.push("/authentication/client/login");
             } else {
               toast.error("Error registering user");
             }

@@ -10,7 +10,7 @@ export async function POST(req) {
       return new Response({ message: "Email already exist" }, { status: 400 });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    await User.create({ email, password: hashedPassword });
+    await User.create({ email, password: hashedPassword, role: "user" });
     return new Response(
       { message: "Data inserted successfully." },
       {

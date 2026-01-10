@@ -2,6 +2,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React from "react";
+import toast from "react-hot-toast";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -26,7 +27,8 @@ export default function LoginClient() {
               redirect: false,
             });
             if (res && res.ok) {
-              router.push("/dashboard/ClientDashboard");
+              toast.success("Logged in successfully");
+              router.push("/dashboard");
             }
           }}
           className="h-1/2 p-10 gap-5 flex flex-col text-center w-[20dvw]"

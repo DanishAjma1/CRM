@@ -1,24 +1,31 @@
 "use client";
-import { useSession, signOut } from "next-auth/react";
-import { useEffect } from "react";
+
+import React from "react";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import ProtectedLayout from "../components/protected/protectedLayout";
+import ClientDashboard from "./client-dashboard/page";
 
-export default function ProtectedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { status } = useSession();
+export default function Dashboard() {
+  const { data: session } = useSession();
   const router = useRouter();
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      signOut({ redirect: false });
-      router.push("/pages/SignIn");
-    }
-  }, [status]);
-
-  if (status === "loading") return null;
-
-  return children;
+  return (
+    <div>
+      <ProtectedLayout>
+        {session?.user?.role === "admin" ? (
+          <div className="p-4">
+            <h1 className="text-xl font-bold">Admin Dashboard</h1>
+            <button onClick={() => signOut({ callbackUrl: "/login" })}>
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <>
+            <h2>{session?.user?.role}</h2>
+            <ClientDashboard />
+          </>
+        )}
+      </ProtectedLayout>
+    </div>
+  );
 }
