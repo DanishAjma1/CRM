@@ -29,12 +29,12 @@ export default function LoginClient() {
             if (res && res.ok) {
               toast.success("Logged in successfully");
               router.push("/dashboard");
-            }
+            } else throw new Error("Invalid credentials");
           }}
           className="h-1/2 p-10 gap-5 flex flex-col text-center w-[20dvw]"
         >
           <input
-            type="text"
+            type="email"
             name="email"
             placeholder="Email"
             value={userData.email}

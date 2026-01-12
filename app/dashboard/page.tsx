@@ -14,8 +14,8 @@ export default function Dashboard() {
       <ProtectedLayout>
         {session?.user?.role === "admin" ? (
           <div className="p-4">
-            <h1 className="text-xl font-bold">Admin Dashboard</h1>
-            <button onClick={() => signOut({ callbackUrl: "/login" })}>
+            <h1 className="text-xl font-bold">{session.googleAccessToken}</h1>
+            <button onClick={() => signOut({ callbackUrl: "/" })}>
               Sign Out
             </button>
           </div>

@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import User from "@/app/models/user";
 import connectMongoDB from "@/app/lib/mongoDB";
 
@@ -12,7 +13,7 @@ export const authOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
@@ -38,15 +39,27 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope: "openid email profile",
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
       async profile(profile) {
         await connectMongoDB();
-        let user = await User.findOne({ email: profile.email });
+        let user = await User.findOne({
+          email: profile.email,
+          role: "admin",
+        });
+
         if (!user) {
           user = await User.create({
             email: profile.email,
             role: "admin",
           });
         }
+
         return {
           id: user._id.toString(),
           email: user.email,
@@ -71,7 +84,23 @@ export const authOptions = {
       }
       return `${baseUrl}/dashboard`;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, account, user }) {
+      if (account && account.provider === "google") {
+        token.googleAccessToken = account.access_token;
+
+        if (account.refresh_token) {
+          token.googleRefreshToken = account.refresh_token;
+
+          await connectMongoDB();
+          await User.findByIdAndUpdate(
+            user.id,
+            { refresh_token: account.refresh_token },
+            { new: true }
+          );
+        } else {
+          console.log("Google did not return refresh token");
+        }
+      }
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -81,6 +110,7 @@ export const authOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
+        session.googleAccessToken = token.googleAccessToken;
         session.user.id = token.id;
         session.user.role = token.role;
       }
@@ -91,7 +121,7 @@ export const authOptions = {
       return session;
     },
   },
-  signOut: "/authentication/client/login",
+  signOut: "/",
 };
 
 const handler = NextAuth(authOptions);
