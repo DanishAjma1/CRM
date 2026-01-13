@@ -1,6 +1,8 @@
 "use client";
 
+import axios from "axios";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 import toast from "react-hot-toast";
@@ -11,7 +13,7 @@ export default function LoginAdmin() {
 
   return (
     <div className="min-h-screen flex justify-center items-center flex-col bg-white rounded gap-10">
-      <div className="bg-white p-10 rounded shadow-lg flex flex-col items-center max-w-[25dvw]">
+      <div className="bg-white p-10 rounded shadow-lg flex flex-col items-center xl:w-[30dvw] lg:w-[35dvw] md:w-[50dvw] w-[90dvw]">
         <h1 className="text-2xl font-bold">Login as Admin</h1>
         <div className="p-10 flex flex-col items-center gap-10 text-center">
           <p>
@@ -21,23 +23,18 @@ export default function LoginAdmin() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-amber-950 text-white px-8 py-2 m-2 w-fit mx-auto rounded disabled:opacity-50"
-            onClick={async (e) => {
-              e.preventDefault();
+            className="bg-amber-950 text-white px-12 py-2 m-2 w-fit mx-auto rounded disabled:opacity-50"
+            onClick={async () => {
               setLoading(true);
               try {
-                const res = await signIn("google", {
-                  callbackUrl: "/dashboard",
-                });
-                res?.ok && router.push("/dashboard");
+                await signIn("google", { callbackUrl: "/dashboard" });
               } catch (error) {
-                toast.error("An error occurred during login");
-              } finally {
+                toast.error("Error logging in as admin");
                 setLoading(false);
               }
             }}
           >
-            {loading ? "Signing in..." : "Login with Google"}
+            Sign In
           </button>
         </div>
       </div>

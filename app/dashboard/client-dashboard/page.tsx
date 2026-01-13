@@ -255,6 +255,12 @@ const ClientDashboard = ({ clientData }) => {
                   {period}
                 </button>
               ))}
+              <button
+                className="px-4 py-2 bg-red-500/80 text-blue-200 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+                onClick={() => signOut({ callbackUrl: "/" })}
+              >
+                Sign Out
+              </button>
             </div>
           </div>
 
@@ -513,7 +519,6 @@ const ClientDashboard = ({ clientData }) => {
           </div>
         </div>
       </div>
-      <button onClick={() => signOut({ callbackUrl: "/" })}>Sign Out</button>
     </div>
   );
 };

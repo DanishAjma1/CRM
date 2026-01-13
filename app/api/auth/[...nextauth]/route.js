@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import User from "@/app/models/user";
 import connectMongoDB from "@/app/lib/mongoDB";
+import { NextResponse } from "next/server";
 
 const MAX_AGE = 5 * 60;
 
@@ -42,8 +43,6 @@ export const authOptions = {
       authorization: {
         params: {
           scope: "openid email profile",
-          access_type: "offline",
-          prompt: "consent",
         },
       },
       async profile(profile) {
@@ -54,10 +53,11 @@ export const authOptions = {
         });
 
         if (!user) {
-          user = await User.create({
-            email: profile.email,
-            role: "admin",
-          });
+          NextResponse.json(
+            { error: "Not Authorized as Admin. Contact Support." },
+            { status: 401 }
+          );
+          throw new Error("Not Authorized as Admin. Contact Support.");
         }
 
         return {
@@ -78,28 +78,16 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async redirect({ url, baseUrl }) {
-      console.log("Redirecting to:", url + " from baseUrl:", baseUrl);
-      if (url.startsWith("http")) {
-        return url;
-      }
-      return `${baseUrl}/dashboard`;
+      // Allows relative paths (e.g., "/dashboard")
+      if (url.startsWith("/")) return `${baseUrl}${url}`; 
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
     async jwt({ token, account, user }) {
-      if (account && account.provider === "google") {
+      if (account) {
         token.googleAccessToken = account.access_token;
-
-        if (account.refresh_token) {
-          token.googleRefreshToken = account.refresh_token;
-
-          await connectMongoDB();
-          await User.findByIdAndUpdate(
-            user.id,
-            { refresh_token: account.refresh_token },
-            { new: true }
-          );
-        } else {
-          console.log("Google did not return refresh token");
-        }
+        console.log("Account Info:", account);
       }
       if (user) {
         token.id = user.id;

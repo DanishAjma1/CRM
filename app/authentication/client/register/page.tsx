@@ -16,7 +16,7 @@ export default function RegisterClient() {
   };
   return (
     <div className="min-h-screen flex justify-center items-center flex-col bg-white rounded gap-10">
-      <div className="bg-white p-10 rounded shadow-lg flex flex-col items-center">
+      <div className="bg-white md:p-10 p-4 rounded shadow-lg flex flex-col items-center  xl:w-[25dvw] lg:w-[35dvw] md:w-[50dvw] w-[90dvw]">
         <h1 className="text-3xl font-bold">Register</h1>
         <form
           onSubmit={async (e) => {
@@ -44,7 +44,7 @@ export default function RegisterClient() {
               toast.error("Error registering user");
             }
           }}
-          className="h-1/2 p-10 gap-5 flex flex-col text-center w-[20dvw]"
+          className="h-1/2 p-10 gap-5 flex flex-col text-center w-full"
         >
           <input
             type="email"
