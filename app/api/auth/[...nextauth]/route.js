@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
 import User from "@/app/models/user";
 import connectMongoDB from "@/app/lib/mongoDB";
 import { NextResponse } from "next/server";
@@ -26,7 +25,7 @@ export const authOptions = {
 
         const passwordMatch = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
         if (!passwordMatch) throw new Error("Wrong Password");
 
@@ -55,7 +54,7 @@ export const authOptions = {
         if (!user) {
           NextResponse.json(
             { error: "Not Authorized as Admin. Contact Support." },
-            { status: 401 }
+            { status: 401 },
           );
           throw new Error("Not Authorized as Admin. Contact Support.");
         }
@@ -78,16 +77,14 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // Allows relative paths (e.g., "/dashboard")
-      if (url.startsWith("/")) return `${baseUrl}${url}`; 
-      // Allows callback URLs on the same origin
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     },
     async jwt({ token, account, user }) {
       if (account) {
         token.googleAccessToken = account.access_token;
-        console.log("Account Info:", account);
+        console.log("Account Info:",  );
       }
       if (user) {
         token.id = user.id;

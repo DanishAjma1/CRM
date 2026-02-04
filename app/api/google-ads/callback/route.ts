@@ -7,9 +7,10 @@ export async function GET(req: Request) {
   const code = searchParams.get("code");
 
   if (!code) {
-    return NextResponse.json({ error: "No code" }, { status: 400 });
+    return NextResponse.json({ error: "Missing authorization code" }, { status: 400 });
   }
 
+  // 1. Exchange Code for Tokens
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -22,29 +23,56 @@ export async function GET(req: Request) {
     }),
   });
 
-  const data = await tokenRes.json();
-  console.log("Google OAuth Token Response:", data);
-  
-  if (!data.refresh_token) {
-    return NextResponse.json(
-      { error: "No refresh token returned" },
-      { status: 400 }
-    );
-  }
+  const tokenData = await tokenRes.json();
+  const { access_token, refresh_token } = tokenData;
 
-  try {
-  await connectMongoDB();
-  await User.findOneAndUpdate(
-    { role: "admin" },
-    { refresh_token: data.refresh_token }
+  // 2. Fetch Ads Data using SearchStream
+  const query = `
+    SELECT 
+      campaign.id, 
+      campaign.name, 
+      metrics.clicks, 
+      metrics.impressions, 
+      metrics.cost_micros,
+      segments.date 
+    FROM campaign 
+    WHERE segments.date DURING TODAY`;
+
+    console.log(process.env.DEVELOPER_TOKEN, " ", process.env.GOOGLE_ADS_CUSTOMER_ID," ",);
+  const adsRes = await fetch(
+    `https://googleads.googleapis.com/v23/customers/${process.env.GOOGLE_ADS_CUSTOMER_ID}/googleAds:searchStream`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        "developer-token": process.env.DEVELOPER_TOKEN!,
+        "login-customer-id": "1155935025", // Your MCC ID (no hyphens)
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    }
   );
 
-  return NextResponse.redirect("http://localhost:3000/dashboard?connected=1");
-  } catch (error) {
-    console.error("Error saving refresh token:", error);
-    return NextResponse.json(
-      { error: "Failed to save refresh token" },
-      { status: 500 }
+  console.log(adsRes.status);
+  if (!adsRes.ok) {
+    const errorBody = await adsRes.text();
+    console.error("Google Ads API Error:", errorBody);
+    return NextResponse.json({ error: "Failed to fetch ads data", details: errorBody }, { status: adsRes.status });
+  }
+
+  const streamData = await adsRes.json();
+  console.log("Success! Data received:", JSON.stringify(streamData, null, 2));
+
+  // 4. Update Database
+  // Note: refresh_token is only returned on the FIRST consent.
+  if (refresh_token) {
+    await connectMongoDB();
+    await User.findOneAndUpdate(
+      { role: "admin" },
+      { googleAdsRefreshToken: refresh_token },
+      { upsert: true }
     );
   }
+
+  return NextResponse.redirect(new URL("/authentication/admin", req.url));
 }
