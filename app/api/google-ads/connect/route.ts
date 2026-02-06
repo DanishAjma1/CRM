@@ -18,7 +18,7 @@ export async function GET() {
     console.error("Error generating Google OAuth URL:", error);
     return NextResponse.json(
       { error: "Failed to generate Google OAuth URL" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

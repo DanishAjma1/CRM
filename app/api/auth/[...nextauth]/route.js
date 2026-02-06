@@ -87,7 +87,7 @@ export const authOptions = {
         console.log("Account Info:",  );
       }
       if (user) {
-        token.id = user.id;
+        token.id = user.id; 
         token.role = user.role;
         token.exp = Math.floor(Date.now() / 1000) + MAX_AGE;
       }

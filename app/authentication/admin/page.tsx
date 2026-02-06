@@ -27,10 +27,10 @@ export default function LoginAdmin() {
             onClick={async () => {
               setLoading(true);
               try {
-                // await signIn("google", { callbackUrl: "/dashboard" });
-                await signIn("/api/google-ads/connect", {
-                  callbackUrl: "/dashboard",
-                });
+                await signIn("google", { callbackUrl: "/dashboard" });
+                // await signIn("/api/google-ads/connect", {
+                //   callbackUrl: "/dashboard",
+                // });
               } catch (error) {
                 toast.error("Error logging in as admin");
                 setLoading(false);
