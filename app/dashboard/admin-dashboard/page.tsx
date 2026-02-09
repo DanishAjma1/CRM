@@ -38,20 +38,16 @@ import {
 import { signOut } from "next-auth/react";
 import axios from "axios";
 
-const AdminDashboard = ({ adminData }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState("30d");
+const Page = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [fetchedData, setFetchedData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [processedData, setProcessedData] = useState(null);
+  const [processedData, setProcessedData] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const res = await axios.get(`/api/admin-data`);
-        console.log("Fetched admin data:", res.data);
-        setFetchedData(res.data);
 
         // Process the data
         const processed = processGoogleAdsData(res.data);
@@ -66,14 +62,123 @@ const AdminDashboard = ({ adminData }) => {
   }, []);
 
   // Function to process Google Ads data
-  const processGoogleAdsData = (rawData) => {
+  interface Metric {
+    costMicros: number;
+    conversionsValue: number;
+    impressions: number;
+    clicks: number;
+    conversions: number;
+  }
+
+  interface Campaign {
+    id: string;
+    name: string;
+    status: string;
+  }
+
+  interface Customer {
+    id: string;
+  }
+
+  interface RawDataItem {
+    metrics: Metric;
+    campaign: Campaign;
+    customer: Customer;
+    date: string;
+    updatedAt: string;
+  }
+
+  interface ProcessedCampaign {
+    id: string;
+    customerId: string;
+    name: string;
+    status: string;
+    impressions: number;
+    clicks: number;
+    conversions: number;
+    conversionsValue: number;
+    spend: number;
+    roas: number;
+    ctr: number;
+    cpc: number;
+    conversionRate: number;
+    costPerConversion: number;
+    date: string;
+    lastUpdated: string;
+  }
+
+  interface TotalMetrics {
+    totalSpend: number;
+    totalImpressions: number;
+    totalClicks: number;
+    totalConversions: number;
+    totalConversionsValue: number;
+    overallRoas: number;
+    overallCtr: number;
+    overallConversionRate: number;
+    activeCampaigns: number;
+    pausedCampaigns: number;
+    totalCampaigns: number;
+    totalClients: number;
+  }
+
+  interface Client {
+    id: string;
+    name: string;
+    spend: number;
+    conversions: number;
+    conversionsValue: number;
+    roas: number;
+    impressions: number;
+    clicks: number;
+    ctr: number;
+    status: string;
+    campaigns: number;
+    lastUpdated: string;
+  }
+
+  interface StatusBreakdown {
+    name: string;
+    value: number;
+    count: number;
+  }
+
+  interface PerformanceOverTime {
+    date: string;
+    spend: number;
+    conversions: number;
+    revenue: number;
+    impressions: number;
+  }
+
+  interface CampaignComparison {
+    name: string;
+    spend: number;
+    conversions: number;
+    clicks: number;
+    roas: number;
+  }
+
+  interface ProcessedData {
+    totalMetrics: TotalMetrics;
+    campaignsData: ProcessedCampaign[];
+    clientsList: Client[];
+    topPerformers: Client[];
+    statusBreakdown: StatusBreakdown[];
+    performanceOverTime: PerformanceOverTime[];
+    campaignComparison: CampaignComparison[];
+  }
+
+  const processGoogleAdsData = (
+    rawData: RawDataItem[],
+  ): ProcessedData | null => {
     if (!rawData || rawData.length === 0) return null;
 
     // Convert micros to dollars
-    const microsToDollars = (micros) => micros / 1000000;
+    const microsToDollars = (micros: number): number => micros / 1000000;
 
     // Calculate metrics for each campaign
-    const campaignsData = rawData.map((item) => {
+    const campaignsData: ProcessedCampaign[] = rawData.map((item) => {
       const spend = microsToDollars(item.metrics.costMicros);
       const conversionsValue = item.metrics.conversionsValue;
       const roas = spend > 0 ? conversionsValue / spend : 0;
@@ -142,65 +247,80 @@ const AdminDashboard = ({ adminData }) => {
     ).length;
 
     // Group by customer for client metrics
-    const customerGroups = campaignsData.reduce((acc, campaign) => {
-      const customerId = campaign.customerId;
-      if (!acc[customerId]) {
-        acc[customerId] = {
-          customerId,
-          campaigns: [],
-          totalSpend: 0,
-          totalConversions: 0,
-          totalConversionsValue: 0,
-          totalImpressions: 0,
-          totalClicks: 0,
-        };
-      }
-      acc[customerId].campaigns.push(campaign);
-      acc[customerId].totalSpend += campaign.spend;
-      acc[customerId].totalConversions += campaign.conversions;
-      acc[customerId].totalConversionsValue += campaign.conversionsValue;
-      acc[customerId].totalImpressions += campaign.impressions;
-      acc[customerId].totalClicks += campaign.clicks;
-      return acc;
-    }, {});
+    interface CustomerGroup {
+      customerId: string;
+      campaigns: ProcessedCampaign[];
+      totalSpend: number;
+      totalConversions: number;
+      totalConversionsValue: number;
+      totalImpressions: number;
+      totalClicks: number;
+    }
 
-    const clientsList = Object.values(customerGroups).map((group) => ({
-      id: group.customerId,
-      name: `Client ${group.customerId}`,
-      spend: group.totalSpend,
-      conversions: group.totalConversions,
-      conversionsValue: group.totalConversionsValue,
-      roas:
-        group.totalSpend > 0
-          ? group.totalConversionsValue / group.totalSpend
-          : 0,
-      impressions: group.totalImpressions,
-      clicks: group.totalClicks,
-      ctr:
-        group.totalImpressions > 0
-          ? (group.totalClicks / group.totalImpressions) * 100
-          : 0,
-      status: group.campaigns.some((c) => c.status === "ENABLED")
-        ? "active"
-        : "paused",
-      campaigns: group.campaigns.length,
-      lastUpdated: group.campaigns[0]?.lastUpdated || "N/A",
-    }));
+    const customerGroups = campaignsData.reduce<Record<string, CustomerGroup>>(
+      (acc, campaign) => {
+        const customerId = campaign.customerId;
+        if (!acc[customerId]) {
+          acc[customerId] = {
+            customerId,
+            campaigns: [],
+            totalSpend: 0,
+            totalConversions: 0,
+            totalConversionsValue: 0,
+            totalImpressions: 0,
+            totalClicks: 0,
+          };
+        }
+        acc[customerId].campaigns.push(campaign);
+        acc[customerId].totalSpend += campaign.spend;
+        acc[customerId].totalConversions += campaign.conversions;
+        acc[customerId].totalConversionsValue += campaign.conversionsValue;
+        acc[customerId].totalImpressions += campaign.impressions;
+        acc[customerId].totalClicks += campaign.clicks;
+        return acc;
+      },
+      {},
+    );
+
+    const clientsList: Client[] = Object.values(customerGroups).map(
+      (group) => ({
+        id: group.customerId,
+        name: `Client ${group.customerId}`,
+        spend: group.totalSpend,
+        conversions: group.totalConversions,
+        conversionsValue: group.totalConversionsValue,
+        roas:
+          group.totalSpend > 0
+            ? group.totalConversionsValue / group.totalSpend
+            : 0,
+        impressions: group.totalImpressions,
+        clicks: group.totalClicks,
+        ctr:
+          group.totalImpressions > 0
+            ? (group.totalClicks / group.totalImpressions) * 100
+            : 0,
+        status: group.campaigns.some((c) => c.status === "ENABLED")
+          ? "active"
+          : "paused",
+        campaigns: group.campaigns.length,
+        lastUpdated: group.campaigns[0]?.lastUpdated || "N/A",
+      }),
+    );
 
     // Sort top performers by ROAS
-    const topPerformers = [...clientsList]
+    const topPerformers: Client[] = [...clientsList]
       .sort((a, b) => b.roas - a.roas)
       .slice(0, 5);
 
     // Campaign status breakdown
-    const statusBreakdown = [
+    const statusBreakdown: StatusBreakdown[] = [
       { name: "Active", value: activeCampaigns, count: activeCampaigns },
       { name: "Paused", value: pausedCampaigns, count: pausedCampaigns },
       { name: "Removed", value: removedCampaigns, count: removedCampaigns },
     ];
 
     // Performance over time (mock data based on current metrics)
-    const performanceOverTime = [
+    const performanceOverTime: PerformanceOverTime[] = [
       {
         date: "Yesterday",
         spend: totalSpend,
@@ -218,7 +338,7 @@ const AdminDashboard = ({ adminData }) => {
     ];
 
     // Campaign performance comparison
-    const campaignComparison = campaignsData.map((c) => ({
+    const campaignComparison: CampaignComparison[] = campaignsData.map((c) => ({
       name: c.name.length > 20 ? c.name.substring(0, 20) + "..." : c.name,
       spend: c.spend,
       conversions: c.conversions,
@@ -254,8 +374,7 @@ const AdminDashboard = ({ adminData }) => {
   const statusColors = ["#10b981", "#f59e0b", "#ef4444"];
 
   // Use processed data or default data
-  const data =
-    processedData || (adminData ? processGoogleAdsData(adminData) : null);
+  const data = processedData;
 
   const metrics = data
     ? [
@@ -308,7 +427,7 @@ const AdminDashboard = ({ adminData }) => {
     : [];
 
   const filteredCampaigns =
-    data?.campaignsData.filter((campaign) =>
+    data?.campaignsData.filter((campaign: ProcessedCampaign) =>
       campaign.name.toLowerCase().includes(searchQuery.toLowerCase()),
     ) || [];
 
@@ -475,7 +594,7 @@ const AdminDashboard = ({ adminData }) => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {data.statusBreakdown.map((entry, index) => (
+                  {data.statusBreakdown.map((_: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={statusColors[index]} />
                   ))}
                 </Pie>
@@ -490,7 +609,7 @@ const AdminDashboard = ({ adminData }) => {
               </PieChart>
             </ResponsiveContainer>
             <div className="mt-4 space-y-2">
-              {data.statusBreakdown.map((status, idx) => (
+              {data.statusBreakdown.map((status: any, idx: number) => (
                 <div key={idx} className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <div
@@ -516,7 +635,7 @@ const AdminDashboard = ({ adminData }) => {
               Top Performing Clients (by ROAS)
             </h2>
             <div className="space-y-4">
-              {data.topPerformers.map((client, idx) => (
+              {data.topPerformers.map((client: any, idx: number) => (
                 <div
                   key={idx}
                   className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-300"
@@ -720,7 +839,7 @@ const AdminDashboard = ({ adminData }) => {
                 </tr>
               </thead>
               <tbody>
-                {filteredCampaigns.map((campaign, idx) => (
+                {filteredCampaigns.map((campaign: any, idx: number) => (
                   <tr
                     key={campaign.id}
                     className="border-b border-white/10 hover:bg-white/5 transition-all duration-300 animate-slide-up"
@@ -802,4 +921,4 @@ const AdminDashboard = ({ adminData }) => {
   );
 };
 
-export default AdminDashboard;
+export default Page;
