@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 
 export default function LoginClient() {
   const router = useRouter();
+  const [isloading, setIsLoading] = React.useState(false);
   const [userData, setUserData] = React.useState({
     email: "",
     password: "",
@@ -16,11 +17,12 @@ export default function LoginClient() {
   };
   return (
     <div className="min-h-screen flex justify-center items-center flex-col bg-white rounded gap-10">
-      <div className="bg-white p-10 rounded shadow-lg flex flex-col items-center">
+      <div className="bg-white md:p-10 p-4 rounded shadow-lg flex flex-col items-center xl:w-[25dvw] lg:w-[35dvw] md:w-[50dvw] w-[90dvw]">
         <h1 className="text-3xl font-bold">Login</h1>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
+            setIsLoading(true);
             const res = await signIn("credentials", {
               email: userData.email,
               password: userData.password,
@@ -28,13 +30,14 @@ export default function LoginClient() {
             });
             if (res && res.ok) {
               toast.success("Logged in successfully");
+              setIsLoading(false);
               router.push("/dashboard");
-            }
+            } else throw new Error("Invalid credentials");
           }}
-          className="h-1/2 p-10 gap-5 flex flex-col text-center w-[20dvw]"
+          className="h-1/2 p-10 gap-5 flex flex-col text-center w-full"
         >
           <input
-            type="text"
+            type="email"
             name="email"
             placeholder="Email"
             value={userData.email}
@@ -51,9 +54,17 @@ export default function LoginClient() {
           />
           <button
             type="submit"
-            className="bg-amber-950 text-white px-8 py-2 m-2 w-fit mx-auto rounded "
+            disabled={isloading}
+            className="bg-amber-950 text-white px-8 py-2 m-2 w-fit mx-auto rounded hover:cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            Login
+            {isloading ? (
+              <div className="flex items-center gap-2">
+                <div className="ring-2 ring-transparent rounded-full h-5 w-5 animate-spin border-l-2 border-r-2 border-amber-900"></div>
+                <span>Logging in...</span>
+              </div>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
       </div>
