@@ -42,12 +42,12 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const ClientDashboard = () => {
+const Page = () => {
   const { data: session } = useSession();
   const [selectedPeriod, setSelectedPeriod] = useState("30d");
   const [fetchedData, setFetchedData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [processedData, setProcessedData] = useState(null);
+  const [processedData, setProcessedData] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,7 +58,7 @@ const ClientDashboard = () => {
         setFetchedData(res.data);
 
         // Process the data
-        const processed = processClientData(res.data, session?.user?.name);
+        const processed = processClientData(res.data, session?.user?.name || "Unknown User");
         setProcessedData(processed);
       } catch (err) {
         console.error("Error fetching client data:", err);
@@ -72,12 +72,11 @@ const ClientDashboard = () => {
   }, [session]);
 
   // Function to process Google Ads data for client
-  const processClientData = (rawData, clientName) => {
+  const processClientData = (rawData: any[], clientName: string) => {
     if (!rawData || rawData.length === 0) return null;
 
     // Convert micros to dollars
-    const microsToDollars = (micros) => micros / 1000000;
-
+    const microsToDollars = (micros: number) => micros / 1000000;
     // Calculate metrics for each campaign
     const campaignsData = rawData.map((item) => {
       const spend = microsToDollars(item.metrics.costMicros);
@@ -111,18 +110,129 @@ const ClientDashboard = () => {
     });
 
     // Calculate total metrics
-    const totalSpend = campaignsData.reduce((sum, c) => sum + c.spend, 0);
-    const totalImpressions = campaignsData.reduce(
-      (sum, c) => sum + c.impressions,
+    const totalSpend = campaignsData.reduce(
+      (sum: number, c) => sum + c.spend,
       0,
     );
-    const totalClicks = campaignsData.reduce((sum, c) => sum + c.clicks, 0);
+    interface Metric {
+      costMicros: number;
+      conversionsValue: number;
+      impressions: number;
+      clicks: number;
+      conversions: number;
+    }
+
+    interface Campaign {
+      id: string;
+      name: string;
+      status: string;
+    }
+
+    interface RawCampaignData {
+      campaign: Campaign;
+      metrics: Metric;
+      date: string;
+    }
+
+    interface ProcessedCampaign {
+      id: string;
+      name: string;
+      status: string;
+      impressions: number;
+      clicks: number;
+      conversions: number;
+      conversionsValue: number;
+      spend: number;
+      roas: number;
+      ctr: number;
+      cpc: number;
+      conversionRate: number;
+      date: string;
+    }
+
+    interface PerformanceData {
+      date: string;
+      impressions: number;
+      clicks: number;
+      conversions: number;
+      spend: number;
+    }
+
+    interface DeviceData {
+      name: string;
+      value: number;
+    }
+
+    interface TopCampaign {
+      name: string;
+      conversions: number;
+      roas: number;
+      status: string;
+      spend: number;
+      clicks: number;
+    }
+
+    interface RadarDataPoint {
+      campaign: string;
+      Performance: number;
+      Engagement: number;
+      Efficiency: number;
+    }
+
+    interface MetricsComparison {
+      metric: string;
+      current: number;
+      target: number;
+    }
+
+    interface ProcessedData {
+      clientName: string;
+      performanceData: PerformanceData[];
+      deviceData: DeviceData[];
+      topCampaigns: TopCampaign[];
+      radarData: RadarDataPoint[];
+      metricsComparison: MetricsComparison[];
+      metrics: {
+        totalSpend: number;
+        spendChange: number;
+        totalClicks: number;
+        clicksChange: number;
+        totalImpressions: number;
+        impressionsChange: number;
+        totalConversions: number;
+        conversionsChange: number;
+      };
+      stats: {
+        avgCpc: number;
+        ctr: number;
+        conversionRate: number;
+        avgRoas: number;
+      };
+      campaignsData: ProcessedCampaign[];
+    }
+
+    interface MetricCard {
+      title: string;
+      value: string;
+      change: string;
+      positive: boolean;
+      icon: React.ComponentType<{ className?: string }>;
+      color: string;
+    }
+    const totalImpressions = campaignsData.reduce(
+      (sum: number, c: any) => sum + c.impressions,
+      0,
+    );
+    const totalClicks = campaignsData.reduce(
+      (sum: number, c: any) => sum + c.clicks,
+      0,
+    );
     const totalConversions = campaignsData.reduce(
-      (sum, c) => sum + c.conversions,
+      (sum: number, c: any) => sum + c.conversions,
       0,
     );
     const totalConversionsValue = campaignsData.reduce(
-      (sum, c) => sum + c.conversionsValue,
+      (sum: number, c: any) => sum + c.conversionsValue,
       0,
     );
     const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
@@ -133,8 +243,16 @@ const ClientDashboard = () => {
     const avgRoas = totalSpend > 0 ? totalConversionsValue / totalSpend : 0;
 
     // Performance over time (group by date if multiple entries)
-    const performanceByDate = {};
-    campaignsData.forEach((campaign) => {
+    const performanceByDate: {
+      [key: string]: {
+        date: string;
+        impressions: number;
+        clicks: number;
+        conversions: number;
+        spend: number;
+      };
+    } = {};
+    campaignsData.forEach((campaign: any) => {
       const dateKey = new Date(campaign.date).toLocaleDateString();
       if (!performanceByDate[dateKey]) {
         performanceByDate[dateKey] = {
@@ -152,7 +270,7 @@ const ClientDashboard = () => {
     });
 
     let performanceData = Object.values(performanceByDate).sort(
-      (a, b) => new Date(a.date) - new Date(b.date),
+      (a, b) => new Date(a.date) < new Date(b.date) ? -1 : 1,
     );
 
     // If we only have yesterday's data, create a 7-day trend simulation
@@ -230,7 +348,7 @@ const ClientDashboard = () => {
       }));
 
     // Campaign performance radar data
-    const radarData = campaignsData.slice(0, 5).map((campaign) => {
+    const radarData = campaignsData.slice(0, 5).map((campaign: any) => {
       // Normalize values to 0-100 scale for better visualization
       const maxConversions =
         Math.max(...campaignsData.map((c) => c.conversions)) || 1;
@@ -543,7 +661,7 @@ const ClientDashboard = () => {
             </h2>
             <div className="space-y-4">
               {data.topCampaigns.length > 0 ? (
-                data.topCampaigns.map((campaign, idx) => (
+                data.topCampaigns.map((campaign: any, idx: number) => (
                   <div
                     key={idx}
                     className="bg-white/5 rounded-xl p-4 hover:bg-gradient-to-b from-[#22336d] to-[#091549] transition-all duration-300 border border-white/10 animate-slide-up"
@@ -599,7 +717,7 @@ const ClientDashboard = () => {
                       <div
                         className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.min((campaign.conversions / Math.max(...data.topCampaigns.map((c) => c.conversions))) * 100, 100)}%`,
+                          width: `${Math.min((campaign.conversions / Math.max(...data.topCampaigns.map((c: any) => c.conversions))) * 100, 100)}%`,
                         }}
                       ></div>
                     </div>
@@ -889,7 +1007,7 @@ const ClientDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.campaignsData.map((campaign, idx) => (
+                  {data.campaignsData.map((campaign: any, idx: number) => (
                     <tr
                       key={campaign.id}
                       className="border-b border-white/10 hover:bg-white/5 transition-all duration-300"
@@ -951,4 +1069,4 @@ const ClientDashboard = () => {
   );
 };
 
-export default ClientDashboard;
+export default Page;

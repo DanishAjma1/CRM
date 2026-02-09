@@ -31,7 +31,7 @@ export default function Page() {
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Handle form submission here
     setFormSubmitted(true);
@@ -41,7 +41,9 @@ export default function Page() {
     }, 3000);
   };
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -434,7 +436,7 @@ export default function Page() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-blue-200 mb-2">
@@ -482,19 +484,16 @@ export default function Page() {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    rows="5"
+                    rows={5}
                     className="w-full px-4 py-3 bg-white/5 border border-blue-500/30 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 resize-none"
                     placeholder="Tell us about your project..."
                   ></textarea>
                 </div>
-                <button
-                  onClick={handleSubmit}
-                  className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 group"
-                >
+                <button className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 group">
                   Send Message
                   <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-              </div>
+              </form>
             )}
           </div>
         </div>
