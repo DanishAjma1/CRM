@@ -58,33 +58,38 @@ export async function GET(req: Request) {
     const customerIds = parsedData.resourceNames.map(
       (name: string) => name.split("/")[1],
     );
+
+    const uniqueCustomerIds = customerIds.filter(
+      (id: string) => id !== process.env.MCC_ID,
+    );
     console.log(customerIds);
+    console.log(uniqueCustomerIds);
 
     /* 3️⃣ Fetch campaign data for ALL customers */
     const resultsPerCustomer = await Promise.all(
-      customerIds.map((id: string) => fetchData(id, access_token)),
-    );
-
-    const allResults = resultsPerCustomer.flatMap(
-      (res: any) => res.results || [],
+      uniqueCustomerIds.map((id: string) => fetchData(id, access_token)),
     );
 
     /* 4️⃣ Save campaign metrics */
     const reportDate = new Date("2026-02-05");
-    console.log(allResults);
+    console.log("All results:", resultsPerCustomer);
+    const allRows = resultsPerCustomer
+      .flat()
+      .flatMap((batch: any) => batch.results || []);
+    console.log("All rows:", allRows);
 
     await connectMongoDB();
 
-    const bulkOps = allResults.map((row: any) => ({
+    const bulkOps = allRows.map((row: any) => ({
       updateOne: {
         filter: {
-          customerId: row.customer.id,
+          "customer.id": row.customer.id,
           "campaign.id": row.campaign.id,
           date: reportDate,
         },
         update: {
           $set: {
-            customerId: row.customer.id,
+            "customer.id": row.customer.id,
             campaign: {
               resourceName: row.campaign.resourceName,
               id: row.campaign.id,
@@ -92,11 +97,13 @@ export async function GET(req: Request) {
               status: row.campaign.status,
             },
             metrics: {
-              impressions: Number(row.metrics.impressions),
-              clicks: Number(row.metrics.clicks),
-              conversions: Number(row.metrics.conversions),
-              conversionsValue: Number(row.metrics.conversionsValue),
-              costMicros: Number(row.metrics.costMicros),
+              // Google Ads API returns metrics as strings; convert to numbers
+              impressions: Number(row.metrics.impressions || 0),
+              clicks: Number(row.metrics.clicks || 0),
+              conversions: Number(row.metrics.conversions || 0),
+              conversionsValue: Number(row.metrics.conversionsValue || 0),
+              // cost_micros needs to be handled carefully (divide by 1,000,000 for actual currency)
+              costMicros: Number(row.metrics.costMicros || 0),
             },
             source: "google_ads",
             date: reportDate,
@@ -106,7 +113,7 @@ export async function GET(req: Request) {
       },
     }));
 
-    if (bulkOps.length) {
+    if (bulkOps.length > 0) {
       await CampaignMetrics.bulkWrite(bulkOps);
     }
 

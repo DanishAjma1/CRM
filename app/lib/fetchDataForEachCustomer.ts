@@ -23,17 +23,17 @@ export default async function fetchData(
           metrics.conversions, 
           metrics.conversions_value, 
           metrics.cost_micros, 
-          campaign.status, 
           campaign.name, 
           campaign.id, 
           customer.descriptive_name, 
-          customer.id 
+          customer.id, 
+          campaign.status 
           FROM campaign 
           WHERE 
-          segments.date DURING LAST_7_DAYS 
-          AND campaign.status != 'REMOVED' 
+          segments.date DURING YESTERDAY 
+          AND campaign.status != 'UNKNOWN' 
           ORDER BY 
-          campaign.name ASC   `,
+          campaign.name ASC    `,
       }),
     },
   );
@@ -48,6 +48,12 @@ export default async function fetchData(
       console.error(error);
     }
   } else {
-    return adsRes.json();
+    const fetchedData = await adsRes.json();
+    console.log(
+      "Data fetched successfully for client_id:",
+      client_id,
+      fetchedData,
+    );
+    return fetchedData;
   }
 }
