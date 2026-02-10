@@ -6,7 +6,7 @@ export async function GET() {
       client_id: process.env.GOOGLE_CLIENT_ID!,
       redirect_uri: process.env.GOOGLE_ADS_REDIRECT_URI!,
       response_type: "code",
-      scope: "email profile",
+      scope: "email profile https://www.googleapis.com/auth/adwords",
       access_type: "offline",
       prompt: "consent",
     });
@@ -18,7 +18,7 @@ export async function GET() {
     console.error("Error generating Google OAuth URL:", error);
     return NextResponse.json(
       { error: "Failed to generate Google OAuth URL" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

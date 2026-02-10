@@ -20,8 +20,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
-
-const LandingPage = () => {
+import { motion } from "framer-motion";
+export default function Page() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -31,7 +31,7 @@ const LandingPage = () => {
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Handle form submission here
     setFormSubmitted(true);
@@ -41,7 +41,9 @@ const LandingPage = () => {
     }, 3000);
   };
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -86,6 +88,11 @@ const LandingPage = () => {
       ],
     },
   ];
+
+  const card = {
+    hidden: { opacity: 0, x: 20, y: 5 },
+    visible: { opacity: 1, x: 0, y: 0 },
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-950 to-slate-900">
@@ -163,6 +170,10 @@ const LandingPage = () => {
 
       {/* Navbar */}
       <nav className="fixed w-full top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-blue-900/50">
+        <source
+          src="https://tkxel.com/wp-content/uploads/2025/11/tkxel-hero-animation-cropped.mp4"
+          type="video/mp4"
+        ></source>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             {/* Logo */}
@@ -250,6 +261,7 @@ const LandingPage = () => {
       </nav>
 
       {/* Hero Section */}
+
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -292,9 +304,17 @@ const LandingPage = () => {
               </div>
             </div>
 
-            <div className="relative animate-slide-in-right">
+            {/* <AnimatePresence> */}
+            <motion.div
+              className="relative"
+              variants={card}
+              initial={"hidden"}
+              whileInView={"visible"}
+              viewport={{ once: false }}
+              transition={{ duration: 0.6 }}
+            >
               <div className="absolute inset-0 bg-blue-600/20 rounded-3xl blur-3xl"></div>
-              <div className="relative bg-gradient-to-br from-blue-900/50 to-slate-900/50 backdrop-blur-xl border border-blue-500/30 rounded-3xl p-8 animate-float">
+              <div className="relative bg-linear-to-br from-blue-900/50 to-slate-900/50 backdrop-blur-xl border border-blue-500/30 rounded-3xl p-8 animate-float">
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-blue-500/20">
                     <div className="p-3 bg-blue-600 rounded-lg">
@@ -337,7 +357,8 @@ const LandingPage = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
+            {/* </AnimatePresence> */}
           </div>
         </div>
       </section>
@@ -415,7 +436,7 @@ const LandingPage = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-blue-200 mb-2">
@@ -463,19 +484,16 @@ const LandingPage = () => {
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    rows="5"
+                    rows={5}
                     className="w-full px-4 py-3 bg-white/5 border border-blue-500/30 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 resize-none"
                     placeholder="Tell us about your project..."
                   ></textarea>
                 </div>
-                <button
-                  onClick={handleSubmit}
-                  className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 group"
-                >
+                <button className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 group">
                   Send Message
                   <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-              </div>
+              </form>
             )}
           </div>
         </div>
@@ -605,15 +623,15 @@ const LandingPage = () => {
               <h3 className="text-white font-bold mb-4">Contact Info</h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-2 text-blue-300">
-                  <Mail className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <Mail className="w-5 h-5 mt-0.5 shrink-0" />
                   <span>hello@advantage.com</span>
                 </li>
                 <li className="flex items-start gap-2 text-blue-300">
-                  <Phone className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <Phone className="w-5 h-5 mt-0.5 shrink-0" />
                   <span>+1 (555) 123-4567</span>
                 </li>
                 <li className="flex items-start gap-2 text-blue-300">
-                  <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <MapPin className="w-5 h-5 mt-0.5 shrink-0" />
                   <span>123 Business Ave, Suite 100, New York, NY 10001</span>
                 </li>
               </ul>
@@ -650,6 +668,4 @@ const LandingPage = () => {
       </footer>
     </div>
   );
-};
-
-export default LandingPage;
+}
