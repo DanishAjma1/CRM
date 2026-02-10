@@ -44,8 +44,6 @@ import axios from "axios";
 
 const Page = () => {
   const { data: session } = useSession();
-  const [selectedPeriod, setSelectedPeriod] = useState("30d");
-  const [fetchedData, setFetchedData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processedData, setProcessedData] = useState<any>(null);
 
@@ -55,10 +53,12 @@ const Page = () => {
         setLoading(true);
         const res = await axios.get(`/api/client-data?id=${session?.user?.id}`);
         console.log("Fetched client data:", res.data);
-        setFetchedData(res.data);
 
         // Process the data
-        const processed = processClientData(res.data, session?.user?.name || "Unknown User");
+        const processed = processClientData(
+          res.data,
+          session?.user?.name || "Unknown User",
+        );
         setProcessedData(processed);
       } catch (err) {
         console.error("Error fetching client data:", err);
@@ -269,8 +269,8 @@ const Page = () => {
       performanceByDate[dateKey].spend += campaign.spend;
     });
 
-    let performanceData = Object.values(performanceByDate).sort(
-      (a, b) => new Date(a.date) < new Date(b.date) ? -1 : 1,
+    let performanceData = Object.values(performanceByDate).sort((a, b) =>
+      new Date(a.date) < new Date(b.date) ? -1 : 1,
     );
 
     // If we only have yesterday's data, create a 7-day trend simulation
@@ -549,12 +549,15 @@ const Page = () => {
         }
       `}</style>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="px-20">
         <div className="mb-8">
           <div className="flex justify-between items-start mb-6">
             <div className="animate-fade-in">
+              <span className="text-white/50 bg-black/50 px-3 py-1 rounded-full text-sm mb-2 inline-block">
+                Client Dashboard
+              </span>
               <h1 className="text-4xl font-bold text-white mb-2">
-                {data.clientName} - Campaign Performance
+                View your - Campaign Performance
               </h1>
               <p className="text-blue-300">
                 Real-time insights into your advertising success
@@ -562,7 +565,7 @@ const Page = () => {
             </div>
             <div className="flex gap-3">
               <button
-                className="px-4 py-2 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition-all duration-300"
+                className="px-4 py-2 bg-red-500/80 hover:cursor-pointer hover:bg-red-800 text-white rounded-lg hover:bg-red-600 transition-all duration-300"
                 onClick={() => signOut({ callbackUrl: "/" })}
               >
                 Sign Out
@@ -698,7 +701,7 @@ const Page = () => {
                           <div className="flex justify-between">
                             <span className="text-blue-300">Spend:</span>
                             <span className="text-white font-semibold">
-                              ${campaign.spend.toFixed(2)}
+                              PKR {campaign.spend.toFixed(2)}
                             </span>
                           </div>
                         </div>
