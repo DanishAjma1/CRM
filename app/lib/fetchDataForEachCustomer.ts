@@ -1,4 +1,3 @@
-import axios from "axios";
 import { NextResponse } from "next/server";
 
 export default async function fetchData(
@@ -33,20 +32,15 @@ export default async function fetchData(
           segments.date DURING YESTERDAY 
           AND campaign.status != 'UNKNOWN' 
           ORDER BY 
-          campaign.name ASC    `,
+          campaign.name ASC`,
       }),
     },
   );
 
   if (!adsRes.ok) {
-    try {
-      return NextResponse.json(
-        { error: "Failed to fetch ads data" },
-        { status: adsRes.status },
-      );
-    } catch (error) {
-      console.error(error);
-    }
+    const errorDetails = await adsRes.json();
+    console.log("GOOGLE ADS ERROR:", JSON.stringify(errorDetails, null, 2));
+    return adsRes;
   } else {
     const fetchedData = await adsRes.json();
     console.log(

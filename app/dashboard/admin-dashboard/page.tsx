@@ -492,30 +492,27 @@ const Page = () => {
         }
       `}</style>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="px-20">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-start mb-6">
             <div className="animate-fade-in">
+              <span className="text-white/50 bg-black/50 px-3 py-1 rounded-full text-sm mb-2 inline-block">
+                Admin Dashboard
+              </span>
               <h1 className="text-4xl font-bold text-white mb-2">
-                Google Ads Admin Dashboard
+                Google Ads - Admin Dashboard
               </h1>
               <p className="text-blue-300">
                 Real-time campaign performance and analytics
               </p>
             </div>
-            <div className="flex gap-3">
-              <button className="px-4 py-2 bg-white/10 text-blue-200 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition-all duration-300 flex items-center gap-2"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                Sign Out
-              </button>
-            </div>
+            <button
+              className="px-4 py-2 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition-all duration-300 flex items-center gap-2"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              Sign Out
+            </button>
           </div>
 
           {/* Key Metrics Cards */}

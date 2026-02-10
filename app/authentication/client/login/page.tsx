@@ -16,9 +16,9 @@ export default function LoginClient() {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
   return (
-    <div className="min-h-screen flex justify-center items-center flex-col bg-white rounded gap-10">
-      <div className="bg-white md:p-10 p-4 rounded shadow-lg flex flex-col items-center xl:w-[25dvw] lg:w-[35dvw] md:w-[50dvw] w-[90dvw]">
-        <h1 className="text-3xl font-bold">Login</h1>
+    <div className="min-h-screen flex justify-center items-center flex-col bg-linear-to-br from-slate-900 via-blue-950 to-slate-900 gap-10">
+      <div className="bg-white/5 bg-blur-2xl md:p-10 p-4 rounded shadow-lg flex flex-col items-center xl:w-[25dvw] lg:w-[35dvw] md:w-[50dvw] w-[90dvw] text-white/70">
+        <h1 className="text-3xl font-bold text-white">Login</h1>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -42,7 +42,7 @@ export default function LoginClient() {
             placeholder="Email"
             value={userData.email}
             onChange={handleChange}
-            className="border py-1 px-2 m-2 rounded-2xl"
+            className="border-b py-1 px-2 m-2 outline-0 bg-transparent"
           />
           <input
             type="password"
@@ -50,20 +50,20 @@ export default function LoginClient() {
             placeholder="Password"
             value={userData.password}
             onChange={handleChange}
-            className="border py-1 px-2 m-2 rounded-2xl"
+            className="border-b py-1 px-2 m-2 outline-0"
           />
           <button
             type="submit"
             disabled={isloading}
-            className="bg-amber-950 text-white px-8 py-2 m-2 w-fit mx-auto rounded hover:cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+            className="border rounded-full text-white px-8 py-2 hover:bg-white/30 duration-200 transition-colors hover:border-transparent hover:text-black w-fit mx-auto hover:cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isloading ? (
               <div className="flex items-center gap-2">
                 <div className="ring-2 ring-transparent rounded-full h-5 w-5 animate-spin border-l-2 border-r-2 border-amber-900"></div>
-                <span>Logging in...</span>
+                <span>signing in...</span>
               </div>
             ) : (
-              "Login"
+              "sign in"
             )}
           </button>
         </form>
