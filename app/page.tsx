@@ -2,8 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  Menu,
-  X,
   ChevronRight,
   Target,
   Code,
@@ -22,7 +20,6 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 export default function Page() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -167,98 +164,6 @@ export default function Page() {
           background-clip: text;
         }
       `}</style>
-
-      {/* Navbar */}
-      <nav className="fixed w-full top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-blue-900/50">
-        <source
-          src="https://tkxel.com/wp-content/uploads/2025/11/tkxel-hero-animation-cropped.mp4"
-          type="video/mp4"
-        ></source>
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <div className="text-2xl font-bold text-white animate-slide-in-left">
-              <span className="gradient-text tracking-wide">CustomSerives</span>
-            </div>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link
-                href="#contact"
-                className="text-blue-200 hover:text-blue-600 hover:underline transition-colors duration-300"
-              >
-                Contact
-              </Link>
-              <Link
-                href="/authentication/client/register"
-                className="text-blue-200 hover:text-blue-600 hover:underline transition-colors duration-300"
-              >
-                Register
-              </Link>
-              <Link
-                href="/authentication/client/login"
-                className="text-blue-200 hover:text-blue-600 hover:underline transition-colors duration-300"
-              >
-                Login
-              </Link>
-              <Link
-                href="/authentication/admin"
-                className="px-6 py-1 border border-blue-500 text-blue-400 rounded-lg hover:bg-blue-500/10 transition-all duration-300"
-              >
-                Admin Access
-              </Link>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden text-white"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
-          </div>
-
-          {/* Mobile Menu */}
-          {isMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 space-y-3 animate-fade-in-up">
-              <Link
-                href="#services"
-                className="block text-blue-200 hover:text-white transition-colors duration-300"
-              >
-                Services
-              </Link>
-              <Link
-                href="#contact"
-                className="block text-blue-200 hover:text-white transition-colors duration-300"
-              >
-                Contact
-              </Link>
-              <Link
-                href="/authentication/client/register"
-                className="text-white hover:drop-shadow transition-all duration-300 text-center"
-              >
-                Register
-              </Link>
-              <Link
-                href="/authentication/client/login"
-                className="block px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all duration-300 text-center"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/authentication/admin"
-                className="block px-6 py-2 border border-blue-500 text-blue-400 rounded-lg hover:bg-blue-500/10 transition-all duration-300 text-center"
-              >
-                Admin
-              </Link>
-            </div>
-          )}
-        </div>
-      </nav>
 
       {/* Hero Section */}
 
@@ -406,95 +311,6 @@ export default function Page() {
                 </div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Form Section */}
-      <section id="contact" className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12 animate-fade-in-up">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Get In <span className="gradient-text">Touch</span>
-            </h2>
-            <p className="text-xl text-blue-200">
-              Ready to transform your business? Let's talk about your goals
-            </p>
-          </div>
-
-          <div className="bg-white/5 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-8 animate-fade-in-up">
-            {formSubmitted ? (
-              <div className="text-center py-12">
-                <div className="mx-auto w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-400" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  Thank You!
-                </h3>
-                <p className="text-blue-200">
-                  We'll get back to you within 24 hours.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-blue-200 mb-2">
-                      Your Name
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-blue-500/30 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                      placeholder="John Doe"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-blue-200 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-white/5 border border-blue-500/30 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-blue-200 mb-2">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    name="company"
-                    value={formData.company}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-white/5 border border-blue-500/30 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                    placeholder="Your Company"
-                  />
-                </div>
-                <div>
-                  <label className="block text-blue-200 mb-2">Message</label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows={5}
-                    className="w-full px-4 py-3 bg-white/5 border border-blue-500/30 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 resize-none"
-                    placeholder="Tell us about your project..."
-                  ></textarea>
-                </div>
-                <button className="w-full px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2 group">
-                  Send Message
-                  <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </form>
-            )}
           </div>
         </div>
       </section>

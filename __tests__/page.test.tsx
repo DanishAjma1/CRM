@@ -1,13 +1,17 @@
+import { render, screen } from "@testing-library/react";
 import Page from "@/app/page";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
 
-describe("Page", () => {
-  it("renders a heading", () => {
+describe("Landing Page", () => {
+  it("renders hero heading", () => {
     render(<Page />);
 
-    const heading = screen.getByRole("heading", { level: 1 });
+    expect(
+      screen.getByText(/Elevate Your Business/i),
+    ).toBeInTheDocument();
 
-    expect(heading).toBeInTheDocument();
+    expect(
+      screen.getByText(/Digital Excellence/i),
+    ).toBeInTheDocument();
   });
 });

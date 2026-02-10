@@ -31,7 +31,7 @@ export async function GET(req: Request) {
 
     const tokenData = await tokenRes.json();
     const { access_token, refresh_token } = tokenData;
-    console.log(access_token, " ", refresh_token);
+    console.log(tokenData);
 
     if (!access_token) {
       throw new Error("No access token received");
