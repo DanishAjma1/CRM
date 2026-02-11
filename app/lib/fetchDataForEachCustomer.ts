@@ -43,11 +43,6 @@ export default async function fetchData(
     return adsRes;
   } else {
     const fetchedData = await adsRes.json();
-    console.log(
-      "Data fetched successfully for client_id:",
-      client_id,
-      fetchedData,
-    );
     return fetchedData;
   }
 }

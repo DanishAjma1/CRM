@@ -6,7 +6,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    console.log("Received request for client_id:", id);
+
     await connectMongoDB();
     const customers = await CampaignMetrics.find({ client_id: id });
     if (!customers || customers.length === 0) {
