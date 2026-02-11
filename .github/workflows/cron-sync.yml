@@ -1,0 +1,15 @@
+name: 5-Minute CRM Sync
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  ping-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Sync API
+        run: |
+          curl -X GET "https://custom-crm-one.vercel.app/api/google-ads/sync" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
