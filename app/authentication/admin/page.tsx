@@ -35,7 +35,7 @@ export default function LoginAdmin() {
               }
             }}
           >
-            Sign 
+            Sign In
           </button>
         </div>
       </div>

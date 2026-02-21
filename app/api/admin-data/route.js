@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectMongoDB from "../../lib/mongoDB";
 import CampaignMetrics from "../../models/campaign_metrics";
 import User from "@/app/models/user";
+import { customer } from "google-ads-api/build/src/protos/autogen/resourceNames";
 
 export async function GET(req) {
   try {
@@ -42,6 +43,41 @@ export async function POST(req) {
     await CampaignMetrics.updateMany(
       { "customer.id": customerId },
       { $set: { client_id: userId } },
+    );
+
+    const customers = await CampaignMetrics.find();
+    return new NextResponse(JSON.stringify(customers), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching campaign metrics:", error);
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
+}
+
+export async function PUT(req) {
+  try {
+    const { customerId, userId } = await req.json();
+    await connectMongoDB();
+    if (!customerId || !userId)
+      return new NextResponse(
+        JSON.stringify("Select the customers or users.. "),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    await CampaignMetrics.updateMany(
+      { "customer.id": customerId, client_id: userId },
+      { $set: { client_id: "" } },
     );
 
     const customers = await CampaignMetrics.find();

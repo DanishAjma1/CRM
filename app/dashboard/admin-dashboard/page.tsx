@@ -1,10 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   PieChart,
@@ -19,26 +15,17 @@ import {
 } from "recharts";
 import {
   TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Users,
   Eye,
   Target,
   Search,
-  Filter,
-  Calendar,
-  Download,
-  MoreVertical,
-  RefreshCcw,
   MousePointer,
   Activity,
   AlertCircle,
   Wallet,
-  ArrowDownNarrowWideIcon,
+  ArrowLeftRight,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import axios from "axios";
-import { form } from "framer-motion/m";
 import toast from "react-hot-toast";
 
 const Page = () => {
@@ -51,8 +38,12 @@ const Page = () => {
   const [processedData, setProcessedData] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [users, setUsers] = useState([]);
+  const { status } = useSession();
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      signOut({ callbackUrl: "/" });
+    }
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -69,7 +60,7 @@ const Page = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [status]);
 
   // Function to process Google Ads data
   interface Metric {
@@ -128,6 +119,7 @@ const Page = () => {
     overallConversionRate: number;
     activeCampaigns: number;
     pausedCampaigns: number;
+    removedCampaigns: number;
     totalCampaigns: number;
     totalClients: number;
   }
@@ -368,6 +360,7 @@ const Page = () => {
         overallConversionRate,
         activeCampaigns,
         pausedCampaigns,
+        removedCampaigns,
         totalCampaigns: campaignsData.length,
         totalClients: Object.keys(customerGroups).length,
       },
@@ -380,7 +373,6 @@ const Page = () => {
     };
   };
 
-  const industryColors = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"];
   const statusColors = ["#10b981", "#f59e0b", "#ef4444"];
 
   // Use processed data or default data
@@ -429,33 +421,36 @@ const Page = () => {
         {
           title: "Active Campaigns",
           value: data.totalMetrics.activeCampaigns,
-          subValue: `${data.totalMetrics.pausedCampaigns} paused`,
+          subValue: `${data.totalMetrics.pausedCampaigns} paused / ${data.totalMetrics.removedCampaigns} removed`,
           icon: Activity,
           color: "indigo",
         },
       ]
     : [];
 
-  const seenIds = new Set();
-
   const filteredCampaigns =
     data?.campaignsData.filter((campaign: ProcessedCampaign) => {
-      const matchesSearch = campaign.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const isNewCustomer = !seenIds.has(campaign.customerId);
+      if (!searchQuery) return true;
 
-      if (matchesSearch && isNewCustomer) {
-        seenIds.add(campaign.customerId);
-        return true;
-      }
-      return false;
+      return campaign.name.toLowerCase().includes(searchQuery.toLowerCase());
     }) || [];
 
   const filteredClientsAndCampaigns =
     data?.campaignsData.filter((campaign: ProcessedCampaign) => {
       return campaign.customerId && campaign.name && campaign.id;
     }) || [];
+
+  const avoidDuplicates = new Set();
+  const uniqueClientsIds = filteredClientsAndCampaigns.filter(
+    (campaign: ProcessedCampaign) => {
+      const identifier = `${campaign.customerId}`;
+      if (avoidDuplicates.has(identifier)) {
+        return false;
+      }
+      avoidDuplicates.add(identifier);
+      return true;
+    },
+  );
 
   const groupedData = filteredClientsAndCampaigns.reduce(
     (acc: any, campaign: any) => {
@@ -691,13 +686,13 @@ const Page = () => {
                     <div className="flex justify-between">
                       <span className="text-blue-300">Spend:</span>
                       <span className="text-white font-semibold">
-                        ${client.spend.toFixed(2)}
+                        PKR {client.spend.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-blue-300">Revenue:</span>
                       <span className="text-white font-semibold">
-                        ${client.conversionsValue.toFixed(2)}
+                        PKR {client.conversionsValue.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -834,7 +829,7 @@ const Page = () => {
                   className="pl-10 pr-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <button
+              {/* <button
                 className="px-4 py-2 bg-white/10 text-blue-200 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
                 onClick={() => setIsRefreshing(true)}
               >
@@ -842,12 +837,12 @@ const Page = () => {
                   className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
                 />
                 Refresh
-              </button>
+              </button> */}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto max-h-[50dvh] overflow-y-scroll">
+            <table className="w-full h-full">
               <thead>
                 <tr className="border-b border-white/20">
                   <th className="text-left py-3 px-4 text-blue-300 font-semibold">
@@ -962,84 +957,141 @@ const Page = () => {
         </div>
       </div>
       <div className="mt-10 from-[#091549] to-[#22336d] text-white/70 backdrop-blur-xl border border-white/20 rounded-2xl p-6 animate-fade-in mx-20">
+        <h2 className="text-center text-2xl font-bold text-white mb-10">
+          Map the Users with related Campigns on Google Ads Account{" "}
+        </h2>
         <div className="flex gap-5">
-          <form
-            className="flex flex-col w-1/2 gap-8 mt-4"
-            onSubmit={async () => {
-              try {
-                setLoading(true);
-                const res = await axios.post(`/api/admin-data`, formData);
+          <form className="flex flex-col w-1/2 gap-8 from-[#091549] to-[#22336d] backdrop-blur-xl border border-white/20 rounded-2xl p-6 animate-fade-in">
+            <h3 className="text-white font-bold text-xl mb-6">
+              Manage Access btw customers and registerd users
+            </h3>
 
-                // Process the data
-                if (res.status !== 200) {
-                  throw new Error("Failed to fetch admin data");
-                }
-                setFormData({
-                  userId: "",
-                  customerId: "",
-                });
-                toast.success("User assigned successfully!");
-              } catch (err) {
-                console.error("Error fetching admin data:", err);
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            <div className="flex flex-wrap flex-col gap-8 w-3/4 mx-auto justify-center items-center">
-              <p>Map the Users with related Campigns on Google Ads Account </p>
-              <select
-                className="bg-black outline-0 border border-white/20 rounded-lg px-4 py-2 text-white w-full md:w-3/5"
-                name="userId"
-                value={formData.userId}
-                onChange={(e) => {
-                  const selectedUserId = e.target.value;
-                  setFormData((prev) => ({ ...prev, userId: selectedUserId }));
-                }}
-              >
-                <option value="#">Select User</option>
-                {users.map((client: any, index: number) => (
-                  <option key={index} value={client.id}>
-                    {client.email}
-                  </option>
-                ))}
-              </select>
-              <ArrowDownNarrowWideIcon className="w-8 h-8 text-white" />
-              <select
-                className="bg-black outline-0 border border-white/20 rounded-lg px-4 py-2 text-white w-full md:w-full"
-                name="customerId"
-                value={formData.customerId}
-                onChange={(e) => {
-                  const selectedUserId = e.target.value;
-                  setFormData((prev) => ({
-                    ...prev,
-                    customerId: selectedUserId,
-                  }));
-                }}
-              >
-                <option value="#" className="text-black">
-                  Select Customer
-                </option>
-                {filteredClientsAndCampaigns.map(
-                  (customer: any, index: number) => (
-                    <option key={index} value={customer.customerId}>
-                      {customer.customerId}
+            <div className="flex flex-col gap-6 w-5/6 mx-auto justify-center">
+              <div className="flex flex-row gap-6 ">
+                <div className="w-full space-y-2 flex flex-col">
+                  <label htmlFor="users" className="text-sm">
+                    Registered Users
+                  </label>
+                  <select
+                    className="bg-black outline-0 border border-white/20 rounded-lg px-4 py-2 text-white"
+                    name="userId"
+                    value={formData.userId}
+                    onChange={(e) => {
+                      const selectedUserId = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        userId: selectedUserId,
+                      }));
+                    }}
+                  >
+                    <option value="#">Select User</option>
+                    {users.map((client: any, index: number) => (
+                      <option key={index} value={client._id}>
+                        {client.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <ArrowLeftRight className="w-10 h-auto text-white flex" />
+                <div className="w-full space-y-2 flex flex-col">
+                  <label htmlFor="users" className="text-sm">
+                    Fetched Clients/Customers
+                  </label>
+                  <select
+                    className="bg-black outline-0 border border-white/20 rounded-lg px-4 py-2 text-white w-full md:w-full"
+                    name="customerId"
+                    value={formData.customerId}
+                    onChange={(e) => {
+                      const selectedUserId = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerId: selectedUserId,
+                      }));
+                    }}
+                  >
+                    <option value="#" className="text-white">
+                      Select Client
                     </option>
-                  ),
-                )}
-              </select>
+                    {uniqueClientsIds.map((customer: any, index: number) => (
+                      <option key={index} value={customer.customerId}>
+                        {customer.customerId}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <button className="px-14 py-2 text-black bg-green-500 hover:bg-green-800 rounded-2xl w-fit mx-auto">
-              Assign
-            </button>
+            <div className="flex gap-4 items-center mx-auto">
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    if (formData.userId === "" || formData.customerId === "") {
+                      toast.error("Please select both user and client");
+                      setLoading(false);
+                      return;
+                    }
+                    const res = await axios.post(`/api/admin-data`, formData);
+
+                    // Process the data
+                    if (res.status !== 200) {
+                      throw new Error("Failed to fetch admin data");
+                    }
+                    setFormData({
+                      userId: "",
+                      customerId: "",
+                    });
+                    toast.success("Access granted successfully!");
+                  } catch (err) {
+                    console.error("Error fetching admin data:", err);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-10 py-2 text-black bg-green-500 hover:bg-green-800 rounded-2xl w-fit mx-auto hover:cursor-pointer"
+              >
+                Grant
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    if (formData.userId === "" || formData.customerId === "") {
+                      toast.error("Please select both user and client");
+                      setLoading(false);
+                      return;
+                    }
+                    const res = await axios.put(`/api/admin-data`, formData);
+
+                    // Process the data
+                    if (res.status !== 200) {
+                      throw new Error("Failed to fetch admin data");
+                    }
+                    setFormData({
+                      userId: "",
+                      customerId: "",
+                    });
+                    toast.success("Access revoked successfully!");
+                  } catch (err) {
+                    console.error("Error fetching admin data:", err);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-10 py-2 text-white bg-red-500 hover:bg-red-800 rounded-2xl w-fit mx-auto hover:cursor-pointer"
+              >
+                Revoke
+              </button>
+            </div>
           </form>
 
-          <aside className="w-1/2">
+          <aside className="w-1/2 max-h-[80dvh] overflow-y-scroll">
             <div className="from-[#091549] to-[#22336d] backdrop-blur-xl border border-white/20 rounded-2xl p-6 animate-fade-in">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">
+                <h1 className="text-xl font-bold text-white">
                   Campaign Mapping
-                </h2>
+                </h1>
               </div>
 
               <div className="overflow-x-auto">

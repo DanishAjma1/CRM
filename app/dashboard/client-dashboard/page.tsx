@@ -43,12 +43,15 @@ import {
 import axios from "axios";
 
 const Page = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [text, setText] = useState("No campaign data available.");
   const [loading, setLoading] = useState(true);
   const [processedData, setProcessedData] = useState<any>(null);
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      signOut({ callbackUrl: "/" });
+    }
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -74,7 +77,7 @@ const Page = () => {
     if (session?.user?.id) {
       fetchData();
     }
-  }, [session]);
+  }, [session, status]);
 
   // Function to process Google Ads data for client
   const processClientData = (rawData: any[], clientName: string) => {

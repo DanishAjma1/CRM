@@ -6,6 +6,7 @@ import User from "@/app/models/user";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+  console.log("CRON HIT:", new Date().toISOString());
   const authHeader = req.headers.get("authorization");
   console.log(authHeader);
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
