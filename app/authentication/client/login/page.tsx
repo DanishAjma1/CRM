@@ -32,7 +32,8 @@ export default function LoginClient() {
               toast.success("Logged in successfully");
               setIsLoading(false);
               router.push("/dashboard");
-            } else throw new Error("Invalid credentials");
+            } else toast.error("Invalid email or password");
+            setIsLoading(false);
           }}
           className="h-1/2 p-10 gap-5 flex flex-col text-center w-full"
         >
@@ -41,6 +42,8 @@ export default function LoginClient() {
             name="email"
             placeholder="Email"
             value={userData.email}
+            autoComplete="false"
+            aria-autocomplete="none"
             onChange={handleChange}
             className="border-b py-1 px-2 m-2 outline-0 bg-transparent"
           />

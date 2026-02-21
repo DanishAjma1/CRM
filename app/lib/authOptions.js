@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import User from "../models/user";
 import connectMongoDB from "./mongoDB";
 
-const MAX_AGE = 5 * 60;
+const MAX_AGE = 30;
 
 export const authOptions = {
   providers: [
@@ -21,13 +21,21 @@ export const authOptions = {
         const filter = { email: credentials?.email, role: "user" };
         const user = await User.findOne(filter);
 
-        if (!user) throw new Error("Wrong Email or Not Authorized as User");
+        if (!user)
+          NextResponse.json(
+            { error: "Veify you credentials.." },
+            { status: 400 },
+          );
 
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password,
         );
-        if (!passwordMatch) throw new Error("Wrong Password");
+        if (!passwordMatch)
+          NextResponse.json(
+            { error: "Veify you credentials.." },
+            { status: 400 },
+          );
 
         return {
           id: user._id.toString(),
@@ -106,7 +114,10 @@ export const authOptions = {
       return session;
     },
   },
-  signOut: "/",
+  pages: {
+    signIn: "/",
+    signOut: "/",
+  },
 };
 
 const handler = NextAuth(authOptions);

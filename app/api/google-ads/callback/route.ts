@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import connectMongoDB from "@/app/lib/mongoDB";
 import User from "@/app/models/user";
-import fetchData from "@/app/lib/fetchDataForEachCustomer";
-import CampaignMetrics from "@/app/models/campaign_metrics";
 import { fetchClients } from "@/app/lib/fetchAllClients";
 import { insertOrUpdateData } from "@/app/lib/insertOrUpdateData";
 
@@ -55,7 +52,7 @@ export async function GET(req: Request) {
       );
     }
 
-    return NextResponse.redirect("/dashboard");
+    return NextResponse.redirect("/?connected=true");
   } catch (error: any) {
     console.error("Google Ads Callback Error:", error);
     return NextResponse.json(
