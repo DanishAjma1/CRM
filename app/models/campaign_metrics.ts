@@ -43,7 +43,6 @@ const CampaignMetricsSchema = new Schema(
     },
 
     campaign: {
-      resourceName: { type: String, required: true },
       id: { type: String, required: true, index: true },
       name: { type: String, required: true },
       status: {
@@ -63,15 +62,16 @@ const CampaignMetricsSchema = new Schema(
 
     date: {
       type: Date,
-      required: true,
-      index: true,
+      default: Date.now,
     },
 
     source: {
       type: String,
       default: "google_ads",
     },
-    updatedAt: { type: Date, default: Date.now },
+    client_id: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

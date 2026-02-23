@@ -43,16 +43,24 @@ import {
 import axios from "axios";
 
 const Page = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [text, setText] = useState("No campaign data available.");
   const [loading, setLoading] = useState(true);
   const [processedData, setProcessedData] = useState<any>(null);
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      signOut({ callbackUrl: "/" });
+    }
     const fetchData = async () => {
       try {
         setLoading(true);
         const res = await axios.get(`/api/client-data?id=${session?.user?.id}`);
         console.log("Fetched client data:", res.data);
+
+        if (res.status !== 200) {
+          setText("The date is not fetched successfully.");
+        }
 
         // Process the data
         const processed = processClientData(
@@ -69,7 +77,7 @@ const Page = () => {
     if (session?.user?.id) {
       fetchData();
     }
-  }, [session]);
+  }, [session, status]);
 
   // Function to process Google Ads data for client
   const processClientData = (rawData: any[], clientName: string) => {
@@ -492,10 +500,9 @@ const Page = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#22336d] to-[#091549] flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-          <div className="text-white text-2xl mb-2">
-            No campaign data available
-          </div>
+          <AlertCircle className="w-16 h-16 text-blue-400 mx-auto mb-4 flex gap-2" />
+          <div className="border-2 border-l-0 rounded-full ring-black animate-spin duration-150 h-6 w-6"></div>
+          <div className="text-white text-2xl mb-2">{text}</div>
           <p className="text-blue-300">
             Please contact your administrator to set up campaigns
           </p>

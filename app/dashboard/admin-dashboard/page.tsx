@@ -1,10 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   PieChart,
@@ -19,39 +15,44 @@ import {
 } from "recharts";
 import {
   TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Users,
   Eye,
   Target,
   Search,
-  Filter,
-  Calendar,
-  Download,
-  MoreVertical,
-  RefreshCcw,
   MousePointer,
   Activity,
   AlertCircle,
   Wallet,
+  ArrowLeftRight,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const Page = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    userId: "",
+    customerId: "",
+  });
   const [processedData, setProcessedData] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [users, setUsers] = useState([]);
+  const { status } = useSession();
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      signOut({ callbackUrl: "/" });
+    }
     const fetchData = async () => {
       try {
         setLoading(true);
         const res = await axios.get(`/api/admin-data`);
 
         // Process the data
-        const processed = processGoogleAdsData(res.data);
+        const processed = processGoogleAdsData(res.data.customers);
         setProcessedData(processed);
+        setUsers(res.data.users);
       } catch (err) {
         console.error("Error fetching admin data:", err);
       } finally {
@@ -59,7 +60,7 @@ const Page = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [status]);
 
   // Function to process Google Ads data
   interface Metric {
@@ -118,6 +119,7 @@ const Page = () => {
     overallConversionRate: number;
     activeCampaigns: number;
     pausedCampaigns: number;
+    removedCampaigns: number;
     totalCampaigns: number;
     totalClients: number;
   }
@@ -358,6 +360,7 @@ const Page = () => {
         overallConversionRate,
         activeCampaigns,
         pausedCampaigns,
+        removedCampaigns,
         totalCampaigns: campaignsData.length,
         totalClients: Object.keys(customerGroups).length,
       },
@@ -370,7 +373,6 @@ const Page = () => {
     };
   };
 
-  const industryColors = ["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"];
   const statusColors = ["#10b981", "#f59e0b", "#ef4444"];
 
   // Use processed data or default data
@@ -419,7 +421,7 @@ const Page = () => {
         {
           title: "Active Campaigns",
           value: data.totalMetrics.activeCampaigns,
-          subValue: `${data.totalMetrics.pausedCampaigns} paused`,
+          subValue: `${data.totalMetrics.pausedCampaigns} paused / ${data.totalMetrics.removedCampaigns} removed`,
           icon: Activity,
           color: "indigo",
         },
@@ -427,13 +429,48 @@ const Page = () => {
     : [];
 
   const filteredCampaigns =
-    data?.campaignsData.filter((campaign: ProcessedCampaign) =>
-      campaign.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    ) || [];
+    data?.campaignsData.filter((campaign: ProcessedCampaign) => {
+      if (!searchQuery) return true;
+
+      return campaign.name.toLowerCase().includes(searchQuery.toLowerCase());
+    }) || [];
+
+  const filteredClientsAndCampaigns =
+    data?.campaignsData.filter((campaign: ProcessedCampaign) => {
+      return campaign.customerId && campaign.name && campaign.id;
+    }) || [];
+
+  const avoidDuplicates = new Set();
+  const uniqueClientsIds = filteredClientsAndCampaigns.filter(
+    (campaign: ProcessedCampaign) => {
+      const identifier = `${campaign.customerId}`;
+      if (avoidDuplicates.has(identifier)) {
+        return false;
+      }
+      avoidDuplicates.add(identifier);
+      return true;
+    },
+  );
+
+  const groupedData = filteredClientsAndCampaigns.reduce(
+    (acc: any, campaign: any) => {
+      const { customerId } = campaign;
+      if (!acc[customerId]) {
+        acc[customerId] = [];
+      }
+      acc[customerId].push(campaign);
+      return acc;
+    },
+    {},
+  );
+
+  // Convert back to an array of groups for easy mapping
+  const groups = Object.values(groupedData);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#22336d] to-[#091549] flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-b from-[#22336d] to-[#091549] flex items-center justify-center gap-2">
+        <div className="border-2 border-l-0 rounded-full ring-black animate-spin duration-150 h-6 w-6"></div>
         <div className="text-white text-2xl">Loading dashboard data...</div>
       </div>
     );
@@ -441,14 +478,15 @@ const Page = () => {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#22336d] to-[#091549] flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-b from-[#22336d] to-[#091549] flex items-center justify-center gap-2">
+        <div className="border-2 border-l-0 rounded-full ring-black animate-spin duration-150 h-6 w-6"></div>
         <div className="text-white text-2xl">No data available</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#22336d] to-[#091549] p-6">
+    <div className="min-h-screen bg-linear-to-r from-[#22336d] to-[#091549] p-6">
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -491,7 +529,6 @@ const Page = () => {
           opacity: 0;
         }
       `}</style>
-
       <div className="px-20">
         {/* Header */}
         <div className="mb-8">
@@ -525,11 +562,11 @@ const Page = () => {
                   className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-6 hover:transform hover:scale-105 transition-all duration-300 hover:shadow-2xl animate-slide-up"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#091549] to-[#22336d]"></div>
+                  <div className="absolute inset-0 bg-linear-to-br from-[#091549] to-[#22336d]"></div>
                   <div className="relative">
                     <div className="flex justify-between items-start mb-4">
                       <div
-                        className={`p-3 rounded-xl bg-gradient-to-br from-${metric.color}-500 to-${metric.color}-600`}
+                        className={`p-3 rounded-xl bg-linear-to-br from-${metric.color}-500 to-${metric.color}-600`}
                       >
                         <Icon className="w-6 h-6 text-white" />
                       </div>
@@ -649,13 +686,13 @@ const Page = () => {
                     <div className="flex justify-between">
                       <span className="text-blue-300">Spend:</span>
                       <span className="text-white font-semibold">
-                        ${client.spend.toFixed(2)}
+                        PKR {client.spend.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-blue-300">Revenue:</span>
                       <span className="text-white font-semibold">
-                        ${client.conversionsValue.toFixed(2)}
+                        PKR {client.conversionsValue.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -673,7 +710,7 @@ const Page = () => {
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2 mt-3">
                     <div
-                      className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                      className="bg-linear-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
                       style={{
                         width: `${Math.min((client.roas / 5) * 100, 100)}%`,
                       }}
@@ -792,15 +829,20 @@ const Page = () => {
                   className="pl-10 pr-4 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <button className="px-4 py-2 bg-white/10 text-blue-200 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2">
-                <RefreshCcw className="w-4 h-4" />
+              {/* <button
+                className="px-4 py-2 bg-white/10 text-blue-200 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+                onClick={() => setIsRefreshing(true)}
+              >
+                <RefreshCcw
+                  className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
                 Refresh
-              </button>
+              </button> */}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto max-h-[50dvh] overflow-y-scroll">
+            <table className="w-full h-full">
               <thead>
                 <tr className="border-b border-white/20">
                   <th className="text-left py-3 px-4 text-blue-300 font-semibold">
@@ -844,7 +886,7 @@ const Page = () => {
                   >
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#091549] via-[#22336d] to-white/50 flex items-center justify-center text-white font-bold text-sm">
+                        <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#091549] via-[#22336d] to-white/50 flex items-center justify-center text-white font-bold text-sm">
                           {campaign.name.charAt(0)}
                         </div>
                         <div>
@@ -912,6 +954,214 @@ const Page = () => {
               </p>
             </div>
           )}
+        </div>
+      </div>
+      <div className="mt-10 from-[#091549] to-[#22336d] text-white/70 backdrop-blur-xl border border-white/20 rounded-2xl p-6 animate-fade-in mx-20">
+        <h2 className="text-center text-2xl font-bold text-white mb-10">
+          Map the Users with related Campigns on Google Ads Account{" "}
+        </h2>
+        <div className="flex gap-5">
+          <form className="flex flex-col w-1/2 gap-8 from-[#091549] to-[#22336d] backdrop-blur-xl border border-white/20 rounded-2xl p-6 animate-fade-in">
+            <h3 className="text-white font-bold text-xl mb-6">
+              Manage Access btw customers and registerd users
+            </h3>
+
+            <div className="flex flex-col gap-6 w-5/6 mx-auto justify-center">
+              <div className="flex flex-row gap-6 ">
+                <div className="w-full space-y-2 flex flex-col">
+                  <label htmlFor="users" className="text-sm">
+                    Registered Users
+                  </label>
+                  <select
+                    className="bg-black outline-0 border border-white/20 rounded-lg px-4 py-2 text-white"
+                    name="userId"
+                    value={formData.userId}
+                    onChange={(e) => {
+                      const selectedUserId = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        userId: selectedUserId,
+                      }));
+                    }}
+                  >
+                    <option value="#">Select User</option>
+                    {users.map((client: any, index: number) => (
+                      <option key={index} value={client._id}>
+                        {client.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <ArrowLeftRight className="w-10 h-auto text-white flex" />
+                <div className="w-full space-y-2 flex flex-col">
+                  <label htmlFor="users" className="text-sm">
+                    Fetched Clients/Customers
+                  </label>
+                  <select
+                    className="bg-black outline-0 border border-white/20 rounded-lg px-4 py-2 text-white w-full md:w-full"
+                    name="customerId"
+                    value={formData.customerId}
+                    onChange={(e) => {
+                      const selectedUserId = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerId: selectedUserId,
+                      }));
+                    }}
+                  >
+                    <option value="#" className="text-white">
+                      Select Client
+                    </option>
+                    {uniqueClientsIds.map((customer: any, index: number) => (
+                      <option key={index} value={customer.customerId}>
+                        {customer.customerId}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-4 items-center mx-auto">
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    if (formData.userId === "" || formData.customerId === "") {
+                      toast.error("Please select both user and client");
+                      setLoading(false);
+                      return;
+                    }
+                    const res = await axios.post(`/api/admin-data`, formData);
+
+                    // Process the data
+                    if (res.status !== 200) {
+                      throw new Error("Failed to fetch admin data");
+                    }
+                    setFormData({
+                      userId: "",
+                      customerId: "",
+                    });
+                    toast.success("Access granted successfully!");
+                  } catch (err) {
+                    console.error("Error fetching admin data:", err);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-10 py-2 text-black bg-green-500 hover:bg-green-800 rounded-2xl w-fit mx-auto hover:cursor-pointer"
+              >
+                Grant
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    if (formData.userId === "" || formData.customerId === "") {
+                      toast.error("Please select both user and client");
+                      setLoading(false);
+                      return;
+                    }
+                    const res = await axios.put(`/api/admin-data`, formData);
+
+                    // Process the data
+                    if (res.status !== 200) {
+                      throw new Error("Failed to fetch admin data");
+                    }
+                    setFormData({
+                      userId: "",
+                      customerId: "",
+                    });
+                    toast.success("Access revoked successfully!");
+                  } catch (err) {
+                    console.error("Error fetching admin data:", err);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="px-10 py-2 text-white bg-red-500 hover:bg-red-800 rounded-2xl w-fit mx-auto hover:cursor-pointer"
+              >
+                Revoke
+              </button>
+            </div>
+          </form>
+
+          <aside className="w-1/2 max-h-[80dvh] overflow-y-scroll">
+            <div className="from-[#091549] to-[#22336d] backdrop-blur-xl border border-white/20 rounded-2xl p-6 animate-fade-in">
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-xl font-bold text-white">
+                  Campaign Mapping
+                </h1>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/20">
+                      <th className="text-left py-3 px-4 text-blue-300 font-semibold">
+                        Clients
+                      </th>
+                      <th className="text-right py-3 px-4 text-blue-300 font-semibold">
+                        Campaigns
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {groups.map((group: any) =>
+                      group.map((campaign: any, idx: number) => (
+                        <tr
+                          key={campaign.id}
+                          className="border-b border-white/10 hover:bg-white/5 transition-all duration-300"
+                        >
+                          {/* Only render this TD for the first item in the group */}
+                          {idx === 0 && (
+                            <td
+                              rowSpan={group.length}
+                              className="py-4 px-4 align-top border-r border-white/10"
+                            >
+                              <div className="flex flex-col">
+                                <span className="text-blue-400 font-bold text-lg">
+                                  {campaign.customerId}
+                                </span>
+                                <span className="text-gray-400 text-xs">
+                                  {group.length} Campaigns
+                                </span>
+                              </div>
+                            </td>
+                          )}
+
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#091549] via-[#22336d] to-white/50 flex items-center justify-center text-white font-bold text-sm">
+                                {campaign.name.charAt(0)}
+                              </div>
+                              <div>
+                                <span className="text-white font-medium block">
+                                  {campaign.name}
+                                </span>
+                                <span className="text-blue-400 text-xs">
+                                  Campaign ID: {campaign.id}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )),
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredCampaigns.length === 0 && (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                  <p className="text-blue-300">
+                    No campaigns found matching your search
+                  </p>
+                </div>
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </div>

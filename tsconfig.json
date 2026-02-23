@@ -30,6 +30,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "app/lib/authOptions.js", "app/api/auth/[...nextauth]/route.js", "app/lib/mongoDB.js", "app/api/google/connect/route.js", "app/dashboard/page.jsx", "__tests__/snapshot.js"  ],
+, "app/lib/authOptions.js", "app/api/auth/[...nextauth]/route.js", "app/lib/mongoDB.js", "app/api/google/connect/route.js", "app/dashboard/page.jsx", "__tests__/snapshot.js", "app/lib/fetchDataForEachCustomer.ts"  ],
   "exclude": ["node_modules"]
 }
